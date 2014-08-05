@@ -1,0 +1,18 @@
+<!doctype html>
+<html>
+  <head>
+    <script src="https://skyway.io/dist/v2/0.3/peer.js"></script>
+    <script src="../libs/EventEmitter2/lib/eventemitter2.js"></script>
+    <script src="../multiparty/MultiParty.js"></script>
+  </head>
+  <body>
+  </body>
+  <script>
+    var multiparty = new MultiParty( {
+      "key": "2831d844-ec9e-11e3-b34e-f1bbf32e3dae"
+      }); 
+    multiparty.on('open', function() {
+      console.log(this);
+    });
+  </script>
+</html>
