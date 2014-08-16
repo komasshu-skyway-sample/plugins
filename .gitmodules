@@ -1,3 +1,0 @@
-[submodule "libs/EventEmitter2"]
-	path = libs/EventEmitter2
-	url = git@github.com:asyncly/EventEmitter2.git
