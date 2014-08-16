@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+  <head>
+    <script src="https://skyway.io/dist/v2/0.3/peer.js"></script>
+    <script src="../libs/EventEmitter2/lib/eventemitter2.js"></script>
+    <script src="../multiparty/MultiParty.js"></script>
+    <script src="../libs/jquery-1.11.1.min.js"></script>
+  </head>
+  <body>
+    <div id="streams"></div>
+  </body>
+  <script>
+    
+    function start() {
+      var multiparty = new MultiParty( {
+        "key": "2831d844-ec9e-11e3-b34e-f1bbf32e3dae"
+      }); 
+
+      multiparty.on('open', function(video) {
+        // 自分のvideoを表示
+        $(video).appendTo("#streams");
+      }).on('peer_video', function(video) {
+        // peerのvideoを表示
+        $(video).appendTo("#streams");
+      }).on('peer_close', function(peer_id) {
+        // peerが切れたら、対象のvideoノードを削除する
+        $("#"+peer_id).remove();
+      });
+
+    }
+
+    start();
+ </script>
+</html>
