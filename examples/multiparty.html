@@ -2,32 +2,76 @@
 <html>
   <head>
     <script src="https://skyway.io/dist/v2/0.3/peer.js"></script>
-    <script src="../libs/eventemitter2.js"></script>
+    <script src="../multiparty/libs/eventemitter2.js"></script>
+    <script src="../multiparty/libs/md5.js"></script>
     <script src="../multiparty/MultiParty.js"></script>
 
     <script src="../libs/jquery-1.11.1.min.js"></script>
+    <style>
+      #message {
+        float: left;
+        width: 200px;
+      }
+      #streams {
+        margin-left: 200px;
+      }
+    </style>
   </head>
   <body>
+    <div id="message">
+      <form>
+        <input type="text"><button type="submit">send</button>
+      </form>
+      <p class="receive">
+      </p>
+    </div>
     <div id="streams"></div>
   </body>
   <script>
-    
-    function start() {
-      var multiparty = new MultiParty( {
-        "key": "737ae99a-5d87-11e3-9c76-1506fbcc2da2"
-      }); 
 
-      multiparty.on('open', function(video) {
-        // 自分のvideoを表示
-        $(video).appendTo("#streams");
-      }).on('peer_video', function(video) {
-        // peerのvideoを表示
-        $(video).appendTo("#streams");
-      }).on('peer_close', function(peer_id) {
-        // peerが切れたら、対象のvideoノードを削除する
-        $("#"+peer_id).remove();
+    var multiparty;
+
+    function start() {
+      multiparty = new MultiParty( {
+        "key": "737ae99a-5d87-11e3-9c76-1506fbcc2da2"
       });
 
+      /////////////////////////////////
+      // for MediaStream
+      multiparty.on('my_ms', function(video) {
+        // 自分のvideoを表示
+        $(video).appendTo("#streams");
+      }).on('peer_ms', function(video) {
+        // peerのvideoを表示
+        $(video).appendTo("#streams");
+      }).on('ms_close', function(peer_id) {
+        // peerが切れたら、対象のvideoノードを削除する
+      })
+
+      ////////////////////////////////
+      // for DataChannel
+      multiparty.on('message', function(mesg) {
+        // peerからテキストメッセージを受信
+        $("p.receive").append(mesg.data + "<br>");
+      });
+
+      // テキストフォームに入力されたテキストをpeerに送信
+      $("#message form").on("submit", function(ev) {
+        ev.preventDefault();  // onsubmitのデフォルト動作（reload）を抑制
+
+        // テキストデータ取得
+        var $text = $(this).find("input[type=text]");
+        var data = $text.val();
+
+        if(data.length > 0) {
+          data = data.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          $("p.receive").append(data + "<br>");
+
+          // メッセージを接続中のpeerに送信する
+          multiparty.send(data);
+          $text.val("");
+        }
+      });
     }
 
     start();
