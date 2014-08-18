@@ -2,9 +2,7 @@
 <html>
   <head>
     <script src="https://skyway.io/dist/v2/0.3/peer.js"></script>
-    <script src="../multiparty/libs/eventemitter2.js"></script>
-    <script src="../multiparty/libs/md5.js"></script>
-    <script src="../multiparty/MultiParty.js"></script>
+    <script src="../multiparty/dist/multiparty.min.js"></script>
 
     <script src="../libs/jquery-1.11.1.min.js"></script>
     <style>
@@ -32,6 +30,7 @@
     var multiparty;
 
     function start() {
+      // MultiParty インスタンスを生成
       multiparty = new MultiParty( {
         "key": "737ae99a-5d87-11e3-9c76-1506fbcc2da2"
       });
@@ -46,6 +45,7 @@
         $(video).appendTo("#streams");
       }).on('ms_close', function(peer_id) {
         // peerが切れたら、対象のvideoノードを削除する
+        $("#"+peer_id).remove();
       })
 
       ////////////////////////////////
@@ -55,6 +55,7 @@
         $("p.receive").append(mesg.data + "<br>");
       });
 
+      //////////////////////////////////////////////////////////
       // テキストフォームに入力されたテキストをpeerに送信
       $("#message form").on("submit", function(ev) {
         ev.preventDefault();  // onsubmitのデフォルト動作（reload）を抑制
