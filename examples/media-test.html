@@ -1,31 +1,26 @@
 <!doctype html>
 <html>
   <head>
+    <script src="../peerjs/dist/peer.js"></script>
+    <!--
     <script src="https://skyway.io/dist/v2/0.3/peer.js"></script>
+    -->
     <script src="../multiparty/deps/md5.js"></script>
     <script src="../multiparty/deps/eventemitter2.js"></script>
     <script src="../multiparty/lib/MultiParty.js"></script>
-    <script src="../multiparty/lib/OverrideNegotiator.js"></script>
 
     <script src="../libs/jquery-1.11.1.min.js"></script>
     <style>
-      #message {
-        float: left;
-        width: 200px;
-      }
       #streams {
-        margin-left: 200px;
+      }
+
+      #streams video {
+        width: 480px;
+        height: 320px;
       }
     </style>
   </head>
   <body>
-    <div id="message">
-      <form>
-        <input type="text"><button type="submit">send</button>
-      </form>
-      <p class="receive">
-      </p>
-    </div>
     <div id="streams"></div>
 
 
@@ -54,34 +49,7 @@
         // peerが切れたら、対象のvideoノードを削除する
         $("#"+peer_id).remove();
       })
-
-      ////////////////////////////////
-      // for DataChannel
-      multiparty.on('message', function(mesg) {
-        // peerからテキストメッセージを受信
-        $("p.receive").append(mesg.data + "<br>");
-      });
-
-      //////////////////////////////////////////////////////////
-      // テキストフォームに入力されたテキストをpeerに送信
-      $("#message form").on("submit", function(ev) {
-        ev.preventDefault();  // onsubmitのデフォルト動作（reload）を抑制
-
-        // テキストデータ取得
-        var $text = $(this).find("input[type=text]");
-        var data = $text.val();
-
-        if(data.length > 0) {
-          data = data.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-          $("p.receive").append(data + "<br>");
-
-          // メッセージを接続中のpeerに送信する
-          multiparty.send(data);
-          $text.val("");
-        }
-      });
     }
-
     start();
  </script>
 </html>
