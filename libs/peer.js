@@ -2374,7 +2374,6 @@ Negotiator._makeOffer = function(connection) {
   var pc = connection.pc;
   pc.createOffer(function(offer) {
     util.log('Created offer.');
-    console.log(connection);
 
     if (!util.supports.sctp && connection.type === 'data' && connection.reliable) {
       offer.sdp = Reliable.higherBandwidthSDP(offer.sdp);
@@ -2425,7 +2424,6 @@ Negotiator._makeAnswer = function(connection) {
 
   pc.createAnswer(function(answer) {
     util.log('Created answer.');
-    console.log(connection);
 
     if (!util.supports.sctp && connection.type === 'data' && connection.reliable) {
       answer.sdp = Reliable.higherBandwidthSDP(answer.sdp);
