@@ -11,17 +11,49 @@
 
     <script src="../libs/jquery-1.11.1.min.js"></script>
     <style>
-      #streams {
+      .video-container h1 {
+        font-size: 1em;
+      }
+      #my {
+        float: left;
+        width: 245px;
+      }
+      #my .streams video {
+        width: 240px;
+        height: 160px;
+        border: 1px solid blue;
+        -moz-transform: scale(-1, 1);
+        -webkit-transform: scale(-1, 1);
+        -o-transform: scale(-1, 1);
+        -ms-transform: scale(-1, 1);
+        transform: scale(-1, 1);
       }
 
-      #streams video {
+      #peer {
+        margin-left: 245px;
+      }
+
+      #peer .streams video {
         width: 480px;
         height: 320px;
       }
-    </style>
+      .clear {
+        clear: both;
+      }
+   </style>
   </head>
   <body>
-    <div id="streams"></div>
+    <div id="container">
+      <div id="my" class="video-container">
+        <h1>my stream</h1>
+        <div class="streams"></div>
+      </div>
+      <div id="peer" class="video-container">
+        <h1>peer streams</h1>
+        <div class="streams"></div>
+      </div>
+      <div class="clear"></div>
+    </div>
 
 
 
@@ -41,10 +73,10 @@
       // for MediaStream
       multiparty.on('my_ms', function(video) {
         // 自分のvideoを表示
-        $(video).appendTo("#streams");
+        $(video).appendTo("#my .streams");
       }).on('peer_ms', function(video) {
         // peerのvideoを表示
-        $(video).appendTo("#streams");
+        $(video).appendTo("#peer .streams");
       }).on('ms_close', function(peer_id) {
         // peerが切れたら、対象のvideoノードを削除する
         $("#"+peer_id).remove();
