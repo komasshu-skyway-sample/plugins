@@ -8,27 +8,23 @@
 
     <script src="../libs/jquery-1.11.1.min.js"></script>
     <style>
-      #message {
-        float: left;
-        width: 200px;
-      }
-      #streams {
-        margin-left: 200px;
-      }
     </style>
   </head>
   <body>
-    <div id="message">
+    <div id="controller">
       <form class="text">
-        <input type="text"><button type="submit">send text</button>
+        <label>ping test</label>
+        <button id="ping" disabled>send ping</button><br>
+
+        <label>throughput test</label>
+        <input id="size" type="number" value="100">
+        <button id="send-binary" disabled>send binary</button><br>
+
       </form>
-      <form class="file">
-        <input type="file">
-      </form>
-      <p class="receive">
-      </p>
     </div>
-    <div id="streams"></div>
+    <div id="console">
+      <p></p>
+    </div>
 
 
 
@@ -49,45 +45,80 @@
 
       ////////////////////////////////
       // for DataChannel
-      multiparty.on('message', function(mesg) {
-        // peerからテキストメッセージを受信
-        if(mesg.data.length < 24) {
-          $("p.receive").append(mesg.data + "<br>");
-        } else {
-          // assuming data exceeds 24 Bytes is blob video data
-          var blob = new Blob([mesg.data])
-            , url = window.URL.createObjectURL(blob);
-          $("<audio controls>").attr({"src": url}).appendTo("<p>").appendTo("p.receive");
-        }
+      $("#controller button#ping").on("click", function(ev) {
+        ev.preventDefault();
+        send({"type": "ping", "ts": performance.now()});
       });
 
-      //////////////////////////////////////////////////////////
-      // テキストフォームに入力されたテキストをpeerに送信
-      $("#message form.text").on("submit", function(ev) {
-        ev.preventDefault();  // onsubmitのデフォルト動作（reload）を抑制
+      $("#controller button#send-binary").on("click", function(ev){
+        ev.preventDefault();
 
-        // テキストデータ取得
-        var $text = $(this).find("input[type=text]");
-        var data = $text.val();
-        if(data.length > 0) {
-          data = data.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-          $("p.receive").append(data + "<br>");
+        var size = parseInt($("#size").val());
+        var data = new Array(size + 1).join("a");
+        send({"type": "REQBIG", "ts": performance.now(), "data": data});
+      });
+        
+      multiparty.on('dc_receiver_open', function(ev) {
+        $("#controller button").attr("disabled", false);
+      });
 
-          // メッセージを接続中のpeerに送信する
-          multiparty.send(data);
-          $text.val("");
+
+      var receive = function(mesg) {
+        var data = mesg.data;
+
+        switch(data.type) {
+        case "ping":
+          data.type = "pong";
+          send(data);
+          break;
+        case "pong":
+          var t0 = parseFloat(data.ts);
+          var rtt = performance.now() - t0;
+          out("pong received - RTT = " + rtt + " [msec]", "red");
+          break;
+        case "REQBIG":
+          data.type = "RESBIG";
+          out("REQBIG received - length = " + data.data.length);
+          send(data);
+          break;
+        case "RESBIG":
+          var rtt = performance.now() - parseFloat(data.ts);
+          var th = data.data.length * 2 * 1000/ rtt;
+          out("RESBIG received - RTT = " + rtt + " [msec], throghput = " + th, "red");
+          break;
+        default:
+          break;
         }
-      });
- 
-      $("#message form.file").on("change", function(ev) {
-        var files = ev.target.files;
-        console.log(files);
-        if(files.length > 0) {
-          multiparty.send(files[0]);
-          // multiparty.send("hello");
-        }
-      });
-    }
+      };
+
+      multiparty.on('message', receive);
+
+      var send = function(data) {
+        multiparty.send(data);
+      }
+
+      var out = function(str, color) {
+        if(typeof(str) === "object") str = JSON.stringify(str);
+
+        var color_ = !!color ? color : "gray";
+
+        var date = new Date(),
+          stamp = [ "[", 
+          date.getHours(), 
+          ":", 
+          date.getMinutes(),
+          ":",
+          date.getSeconds(),
+          ":",
+          "<span style='color:" + color_ + "'>",
+            str,
+          "</span>"
+          ].join(" ");
+        
+        $("<div>").html(stamp).appendTo("#console p");
+      }
+
+  }
 
     start();
  </script>
