@@ -1,0 +1,125 @@
+<!doctype html>
+<html>
+  <head>
+    <script src="../libs/peer.js"></script>
+    <script src="../multiparty/deps/md5.js"></script>
+    <script src="../multiparty/deps/eventemitter2.js"></script>
+    <script src="../multiparty/lib/MultiParty.js"></script>
+
+    <script src="../libs/jquery-1.11.1.min.js"></script>
+    <style>
+    </style>
+  </head>
+  <body>
+    <div id="controller">
+      <form class="text">
+        <label>ping test</label>
+        <button id="ping" disabled>send ping</button><br>
+
+        <label>throughput test</label>
+        <input id="size" type="number" value="100">
+        <button id="send-binary" disabled>send binary</button><br>
+
+      </form>
+    </div>
+    <div id="console">
+      <p></p>
+    </div>
+
+
+
+    <a target="_blank" href="https://github.com/komasshu-skyway-sample/plugins/tree/master/multiparty"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/365986a132ccd6a44c23a9169022c0b5c890c387/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f7265645f6161303030302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"></a>
+  </body>
+  <script>
+
+    var multiparty;
+
+    function start() {
+      // MultiParty インスタンスを生成
+      multiparty = new MultiParty( {
+        "key": "737ae99a-5d87-11e3-9c76-1506fbcc2da2",
+        "video": false,
+        "audio": false,
+        "reliable": true
+      });
+
+      ////////////////////////////////
+      // for DataChannel
+      $("#controller button#ping").on("click", function(ev) {
+        ev.preventDefault();
+        send({"type": "ping", "ts": performance.now()});
+      });
+
+      $("#controller button#send-binary").on("click", function(ev){
+        ev.preventDefault();
+
+        var size = parseInt($("#size").val());
+        var data = new Array(size + 1).join("a");
+        send({"type": "REQBIG", "ts": performance.now(), "data": data});
+      });
+        
+      multiparty.on('dc_receiver_open', function(ev) {
+        $("#controller button").attr("disabled", false);
+      });
+
+
+      var receive = function(mesg) {
+        var data = mesg.data;
+
+        switch(data.type) {
+        case "ping":
+          data.type = "pong";
+          send(data);
+          break;
+        case "pong":
+          var t0 = parseFloat(data.ts);
+          var rtt = performance.now() - t0;
+          out("pong received - RTT = " + rtt + " [msec]", "red");
+          break;
+        case "REQBIG":
+          data.type = "RESBIG";
+          out("REQBIG received - length = " + data.data.length);
+          send(data);
+          break;
+        case "RESBIG":
+          var rtt = performance.now() - parseFloat(data.ts);
+          var th = data.data.length * 2 * 1000/ rtt;
+          out("RESBIG received - RTT = " + rtt + " [msec], throghput = " + th, "red");
+          break;
+        default:
+          break;
+        }
+      };
+
+      multiparty.on('message', receive);
+
+      var send = function(data) {
+        multiparty.send(data);
+      }
+
+      var out = function(str, color) {
+        if(typeof(str) === "object") str = JSON.stringify(str);
+
+        var color_ = !!color ? color : "gray";
+
+        var date = new Date(),
+          stamp = [ "[", 
+          date.getHours(), 
+          ":", 
+          date.getMinutes(),
+          ":",
+          date.getSeconds(),
+          ":",
+          "<span style='color:" + color_ + "'>",
+            str,
+          "</span>"
+          ].join(" ");
+        
+        $("<div>").html(stamp).appendTo("#console p");
+      }
+
+  }
+
+    start();
+ </script>
+</html>
