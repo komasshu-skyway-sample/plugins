@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+  <head>
+    <script src="../libs/peer.js"></script>
+    <script src="../multiparty/deps/md5.js"></script>
+    <script src="../multiparty/deps/eventemitter2.js"></script>
+    <script src="../multiparty/lib/MultiParty.js"></script>
+
+    <script src="../libs/jquery-1.11.1.min.js"></script>
+    <style>
+      #message {
+        float: left;
+        width: 200px;
+      }
+      #streams {
+        margin-left: 200px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="message">
+      <form class="text">
+        <input type="text"><button type="submit">send text</button>
+      </form>
+      <form class="file">
+        <input type="file">
+      </form>
+      <p class="receive">
+      </p>
+    </div>
+    <div id="streams"></div>
+
+
+
+    <a target="_blank" href="https://github.com/komasshu-skyway-sample/plugins/tree/master/multiparty"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/365986a132ccd6a44c23a9169022c0b5c890c387/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f7265645f6161303030302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"></a>
+  </body>
+  <script>
+
+    var multiparty;
+
+    function start() {
+      // MultiParty インスタンスを生成
+      multiparty = new MultiParty( {
+        "key": "737ae99a-5d87-11e3-9c76-1506fbcc2da2",
+        "video": false,
+        "audio": false,
+        "reliable": true
+      });
+
+      ////////////////////////////////
+      // for DataChannel
+      multiparty.on('message', function(mesg) {
+        // peerからテキストメッセージを受信
+        if(mesg.data.length < 24) {
+          $("p.receive").append(mesg.data + "<br>");
+        } else {
+          // assuming data exceeds 24 Bytes is blob video data
+          var blob = new Blob([mesg.data])
+            , url = window.URL.createObjectURL(blob);
+          $("<audio controls>").attr({"src": url}).appendTo("<p>").appendTo("p.receive");
+        }
+      });
+
+      //////////////////////////////////////////////////////////
+      // テキストフォームに入力されたテキストをpeerに送信
+      $("#message form.text").on("submit", function(ev) {
+        ev.preventDefault();  // onsubmitのデフォルト動作（reload）を抑制
+
+        // テキストデータ取得
+        var $text = $(this).find("input[type=text]");
+        var data = $text.val();
+        if(data.length > 0) {
+          data = data.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          $("p.receive").append(data + "<br>");
+
+          // メッセージを接続中のpeerに送信する
+          multiparty.send(data);
+          $text.val("");
+        }
+      });
+ 
+      $("#message form.file").on("change", function(ev) {
+        var files = ev.target.files;
+        console.log(files);
+        if(files.length > 0) {
+          multiparty.send(files[0]);
+          // multiparty.send("hello");
+        }
+      });
+    }
+
+    start();
+ </script>
+</html>
