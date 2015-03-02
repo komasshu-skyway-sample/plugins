@@ -1135,6 +1135,7 @@ var util = {
     var binaryBlob = false;
     var sctp = false;
     var onnegotiationneeded = !!window.webkitRTCPeerConnection;
+    var ipv6 = false;
 
     var pc, dc;
     try {
@@ -1207,6 +1208,7 @@ var util = {
       binary: sctp, // deprecated; sctp implies binary support.
       reliable: sctp, // deprecated; sctp implies reliable data.
       sctp: sctp,
+      ipv6: ipv6,
       onnegotiationneeded: onnegotiationneeded
     };
   }()),
@@ -2264,16 +2266,23 @@ Negotiator._startPeerConnection = function(connection) {
 
   if (connection.type === 'data' && !util.supports.sctp) {
     optional = {
-      mandatory: { "googIPv6": true },
+      mandatory: { "googIPv6": util.supports.ipv6 },
       optional: [
         { "RtpDataChannels": true },
         { "googImprovedWifiBwe": true },
       ]
     };
+  } else if (connection.type === 'data' && util.supports.sctp) {
+    optional = {
+      mandatory: { "googIPv6": util.supports.ipv6 },
+      optional: [
+        { "googImprovedWifiBwe": true }
+      ]
+    };
   } else if (connection.type === 'media') {
     // Interop req for chrome.
     optional = {
-      mandatory: { "googIPv6": true },
+      mandatory: { "googIPv6": util.supports.ipv6 },
       optional: [
         { "DtlsSrtpKeyAgreement": true },
         { "googImprovedWifiBwe": true }
