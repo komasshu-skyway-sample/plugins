@@ -13,12 +13,25 @@
   <body>
     <div id="controller">
       <form class="text">
-        <label>ping test</label>
-        <button id="ping" disabled>send ping</button><br>
+        <div class="ipv6">
+          <label>ues IPv6 <input type="checkbox" id="useipv6" checked></label><br>
+        </div>
+        <div class="connect">
+          <span>connect</span>
+          <label><input type="radio" name="protocol" value="ws">WebSocket</label>
+          <label><input type="radio" name="protocol" value="rtc" checked>WebRTC</label>
+          <button id="connect">connect</button>
+        </div>
+        <div class="ping-test">
+          <label>ping test</label>
+          <button id="ping" disabled>send ping</button><br>
+        </div>
 
-        <label>throughput test</label>
-        <input id="size" type="number" value="100">
-        <button id="send-binary" disabled>send binary</button><br>
+        <div class="throughput-test">
+          <label>throughput test</label>
+          <input id="size" type="number" value="100">
+          <button id="send-binary" disabled>send binary</button><br>
+        </div>
 
       </form>
     </div>
@@ -32,10 +45,16 @@
   </body>
   <script>
 
-    var multiparty;
+    var multiparty, ws;
 
-    function start() {
+    var useipv6 = function(){
+      return $("#useipv6")[0].checked;
+    };
+
+    function startRTC(cb /* cb will be called when dc_sender_open fired */) {
       // MultiParty インスタンスを生成
+      util.supports.ipv6 = useipv6();
+
       multiparty = new MultiParty( {
         "key": "737ae99a-5d87-11e3-9c76-1506fbcc2da2",
         "video": false,
@@ -43,8 +62,53 @@
         "reliable": true
       });
 
-      ////////////////////////////////
-      // for DataChannel
+      multiparty.on('dc_sender_open', function(ev) {
+        multiparty.on('message', receive);
+        if(typeof(cb) === "function") cb();
+      });
+
+      multiparty.on('dc_receiver_open', function(ev) {
+        $("#controller button").attr("disabled", false);
+      });
+    }
+
+    function startWS(cb /* cb will be called when open fired */) {
+      var host = useipv6() ? "localhost" : "localhost"; // fixme: it should be changed.
+      var port = 9009; // fixme: it might be changed.
+      var endpointurl = "ws://" + host + ":" + port + "/test";
+
+
+      ws = new WebSocket(endpointurl);
+
+      ws.onopen = function(ev) {
+        ws.onmessage = function(ev) {
+          var mesg = { "data": JSON.parse(ev.data) };
+          receive(mesg);
+        }
+        if(typeof(cb) === "function") cb();
+        $("#controller button").attr("disabled", false);
+      };
+    }
+
+
+
+    function init(){
+      var disableBtn = function(){
+        $(".connect input").attr("disabled", true);
+        $(".connect button").attr("disabled", true);
+      }
+
+      $("#connect").on("click", function(ev) {
+        ev.preventDefault();
+        var proto = $(".connect input[name=protocol]:checked").val();
+
+        if(proto === "rtc") {
+          startRTC(disableBtn);
+        } else {
+          startWS(disableBtn);
+        }
+      });
+
       $("#controller button#ping").on("click", function(ev) {
         ev.preventDefault();
         send({"type": "ping", "ts": performance.now()});
@@ -58,68 +122,64 @@
         send({"type": "REQBIG", "ts": performance.now(), "data": data});
       });
         
-      multiparty.on('dc_receiver_open', function(ev) {
-        $("#controller button").attr("disabled", false);
-      });
+    }
 
+    var receive = function(mesg) {
+      var data = mesg.data;
 
-      var receive = function(mesg) {
-        var data = mesg.data;
-
-        switch(data.type) {
-        case "ping":
-          data.type = "pong";
-          send(data);
-          break;
-        case "pong":
-          var t0 = parseFloat(data.ts);
-          var rtt = performance.now() - t0;
-          out("pong received - RTT = " + rtt + " [msec]", "red");
-          break;
-        case "REQBIG":
-          data.type = "RESBIG";
-          out("REQBIG received - length = " + data.data.length);
-          send(data);
-          break;
-        case "RESBIG":
-          var rtt = performance.now() - parseFloat(data.ts);
-          var th = data.data.length * 2 * 1000/ rtt;
-          out("RESBIG received - RTT = " + rtt + " [msec], throghput = " + th, "red");
-          break;
-        default:
-          break;
-        }
-      };
-
-      multiparty.on('message', receive);
-
-      var send = function(data) {
-        multiparty.send(data);
+      switch(data.type) {
+      case "ping":
+        data.type = "pong";
+        send(data);
+        break;
+      case "pong":
+        var t0 = parseFloat(data.ts);
+        var rtt = performance.now() - t0;
+        out("pong received - RTT = " + rtt + " [msec]", "red");
+        break;
+      case "REQBIG":
+        data.type = "RESBIG";
+        out("REQBIG received - length = " + data.data.length);
+        send(data);
+        break;
+      case "RESBIG":
+        var rtt = performance.now() - parseFloat(data.ts);
+        var th = data.data.length * 2 * 1000/ rtt;
+        out("RESBIG received - RTT = " + rtt + " [msec], data len = " + data.data.length + "[bytes], throghput = " + th, "red");
+        break;
+      default:
+        break;
       }
+    };
 
-      var out = function(str, color) {
-        if(typeof(str) === "object") str = JSON.stringify(str);
 
-        var color_ = !!color ? color : "gray";
+    var send = function(data) {
+      if(multiparty && multiparty.opened) { multiparty.send(data); }
+      if(ws && ws.readyState === 1) { ws.send(JSON.stringify(data)); }
+    }
 
-        var date = new Date(),
-          stamp = [ "[", 
-          date.getHours(), 
-          ":", 
-          date.getMinutes(),
-          ":",
-          date.getSeconds(),
-          ":",
-          "<span style='color:" + color_ + "'>",
-            str,
-          "</span>"
-          ].join(" ");
-        
-        $("<div>").html(stamp).appendTo("#console p");
-      }
+    var out = function(str, color) {
+      if(typeof(str) === "object") str = JSON.stringify(str);
 
-  }
+      var color_ = !!color ? color : "gray";
 
-    start();
+      var date = new Date(),
+        stamp = [ "[", 
+        date.getHours(), 
+        ":", 
+        date.getMinutes(),
+        ":",
+        date.getSeconds(),
+        ":",
+        "<span style='color:" + color_ + "'>",
+          str,
+        "</span>"
+        ].join(" ");
+      
+      $("<div>").html(stamp).appendTo("#console p");
+    }
+
+
+    init();
  </script>
 </html>
