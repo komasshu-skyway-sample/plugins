@@ -79,7 +79,7 @@
     }
 
     function startWS(cb /* cb will be called when open fired */) {
-      var host = useipv6() ? "localhost" : "localhost"; // fixme: it should be changed.
+      var host = useipv6() ? "[2001:a252:96c0:e00:dcae:88aa:faf9:4a2d]" : "localhost"; // fixme: it should be changed.
       var port = 9009; // fixme: it might be changed.
       var endpointurl = "ws://" + host + ":" + port + "/test";
 
