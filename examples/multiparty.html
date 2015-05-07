@@ -43,10 +43,16 @@
       // for MediaStream
       multiparty.on('my_ms', function(video) {
         // 自分のvideoを表示
-        $(video).appendTo("#streams");
+        $('<video>', {src: video.src, id: video.id})
+          .on("loadedmetadata", function(ev){
+            $(this)[0].play();
+          }).appendTo("#streams");
       }).on('peer_ms', function(video) {
         // peerのvideoを表示
-        $(video).appendTo("#streams");
+          $('<video>', {src: video.src, id: video.id})
+            .on("loadedmetadata", function(ev){
+              $(this)[0].play();
+            }).appendTo("#streams");
       }).on('ms_close', function(peer_id) {
         // peerが切れたら、対象のvideoノードを削除する
         $("#"+peer_id).remove();
