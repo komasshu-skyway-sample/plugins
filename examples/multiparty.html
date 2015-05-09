@@ -2,7 +2,7 @@
 <html>
   <head>
     <script src="../libs/peer.js"></script>
-    <script src="../multiparty/dist/multiparty.min.js"></script>
+    <script src="../multiparty/dist/multiparty.js"></script>
 
     <script src="../libs/jquery-1.11.1.min.js"></script>
     <style>
@@ -43,15 +43,17 @@
       // for MediaStream
       multiparty.on('my_ms', function(video) {
         // 自分のvideoを表示
-        $('<video>', {src: video.src, id: video.id})
+        $_video = $('<video>', {src: video.src, id: video.id})
           .on("loadedmetadata", function(ev){
             $(this)[0].play();
-          }).appendTo("#streams");
+          });
+        $_video.appendTo("#streams");
       }).on('peer_ms', function(video) {
         // peerのvideoを表示
           $('<video>', {src: video.src, id: video.id})
             .on("loadedmetadata", function(ev){
               $(this)[0].play();
+              $(this)[0].volume = 0;
             }).appendTo("#streams");
       }).on('ms_close', function(peer_id) {
         // peerが切れたら、対象のvideoノードを削除する
