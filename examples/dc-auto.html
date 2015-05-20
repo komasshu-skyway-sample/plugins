@@ -55,16 +55,22 @@
       // MultiParty インスタンスを生成
       util.supports.ipv6 = useipv6();
 
+      var flagMesgEvt = false;
+
       multiparty = new MultiParty( {
         "key": "737ae99a-5d87-11e3-9c76-1506fbcc2da2",
+//        "config": { 'iceServers': [{ 'url': 'stun:[2001:a252:96c0:e00:9806:812a:2886:7a09]:3478' }] },
         "video": false,
         "audio": false,
         "reliable": true
       });
 
       multiparty.on('dc_sender_open', function(ev) {
-        multiparty.on('message', receive);
-        if(typeof(cb) === "function") cb();
+        if(!flagMesgEvt) {
+          flagMesgEvt = true;
+          multiparty.on('message', receive);
+          if(typeof(cb) === "function") cb();
+        }
       });
 
       multiparty.on('dc_receiver_open', function(ev) {
@@ -73,7 +79,7 @@
     }
 
     function startWS(cb /* cb will be called when open fired */) {
-      var host = useipv6() ? "localhost" : "localhost"; // fixme: it should be changed.
+      var host = useipv6() ? "[2001:a252:96c0:e00:dcae:88aa:faf9:4a2d]" : "localhost"; // fixme: it should be changed.
       var port = 9009; // fixme: it might be changed.
       var endpointurl = "ws://" + host + ":" + port + "/test";
 
