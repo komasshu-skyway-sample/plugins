@@ -1339,7 +1339,12 @@ Socket.prototype._startWebSocket = function(id) {
   // Fall back to XHR if WS closes
   this._socket.onclose = function(msg) {
       util.error("WS closed with code "+msg.code);
-      self._startXhrStream();
+      // self._startXhrStream();
+  }
+
+  // close WS in case of window.close
+  window.onclose = function(ev) {
+    self._socket.close();
   }
 }
 
