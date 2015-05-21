@@ -1284,7 +1284,7 @@ Socket.prototype.start = function(id, token) {
   this._httpUrl += '/' + id + '/' + token;
   this._wsUrl += '&id=' + id + '&token=' + token;
 
-  // this._startXhrStream();
+  this._startXhrStream();
   this._startWebSocket();
 }
 
@@ -1339,7 +1339,7 @@ Socket.prototype._startWebSocket = function(id) {
   // Fall back to XHR if WS closes
   this._socket.onclose = function(msg) {
       util.error("WS closed with code "+msg.code);
-      // self._startXhrStream();
+      self._startXhrStream();
   }
 
   // close WS in case of window.close
@@ -1350,6 +1350,8 @@ Socket.prototype._startWebSocket = function(id) {
 
 /** Start XHR streaming. */
 Socket.prototype._startXhrStream = function(n) {
+  return;
+
   try {
     var self = this;
     this._http = new XMLHttpRequest();
