@@ -76,6 +76,7 @@
         $(vNode).appendTo("#streams");
       }).on('peer_ms', function(video) {
         // peerのvideoを表示
+        console.log(video);
         var vNode = MultiParty.util.createVideoNode(video);
         vNode.setAttribute("class", "peer-video");
         $(vNode).appendTo("#streams");
