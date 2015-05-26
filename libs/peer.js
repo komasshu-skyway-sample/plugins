@@ -49,6 +49,7 @@ function DataConnection(peer, provider, options) {
     this._peerBrowser = this.options._payload.browser;
   }
 
+  util.log("startConnection from DataConnection");
   Negotiator.startConnection(
     this,
     this.options._payload || {
@@ -309,6 +310,8 @@ function MediaConnection(peer, provider, options) {
   this.localStream = this.options._stream;
 
   this.id = this.options.connectionId || MediaConnection._idPrefix + util.randomToken();
+
+  util.log("startConnection from MediaConnection");
   if (this.localStream) {
     Negotiator.startConnection(
       this,
@@ -355,6 +358,7 @@ MediaConnection.prototype.answer = function(stream) {
 
   this.options._payload._stream = stream;
 
+  util.log("startConnection from answer step");
   this.localStream = stream;
   Negotiator.startConnection(
     this,
@@ -410,6 +414,7 @@ Negotiator.startConnection = function(connection, options) {
 
   if (connection.type === 'media' && options._stream) {
     // Add the stream.
+    console.log("addStream at 413");
     pc.addStream(options._stream);
   }
 
@@ -435,7 +440,10 @@ Negotiator.startConnection = function(connection, options) {
     }
 
     if (!util.supports.onnegotiationneeded) {
-      Negotiator._makeOffer(connection);
+      // firefox
+      setTimeout(function(){
+        Negotiator._makeOffer(connection);
+      }, 0);
     }
   } else {
     Negotiator.handleSDP('OFFER', connection, options.sdp);
@@ -581,6 +589,7 @@ Negotiator._setupListeners = function(connection, pc, pc_id) {
     // TODO: This is hopefully just a temporary fix. We should try to
     // understand why this is happening.
     if (connection.type === 'media') {
+      console.log("addStream at 584");
       connection.addStream(stream);
     }
   };
@@ -689,6 +698,12 @@ Negotiator.handleSDP = function(type, connection, sdp) {
 Negotiator.handleCandidate = function(connection, ice) {
   var candidate = ice.candidate;
   var sdpMLineIndex = ice.sdpMLineIndex;
+
+  if( candidate.match(/::|(?:[0-9a-fA-F]{1,4}:){1,7}:|:(?::[0-9a-fA-F]{1,4}){1,7}|(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}/) ){
+    util.log('candidate includes ipv6. unset this candidate');
+    return;
+  }
+
   connection.pc.addIceCandidate(new RTCIceCandidate({
     sdpMLineIndex: sdpMLineIndex,
     candidate: candidate
@@ -974,6 +989,7 @@ Peer.prototype._handleMessage = function(message) {
             _payload: payload,
             metadata: payload.metadata
           });
+          util.log("MediaConnection created in OFFER");
           this._addConnection(peer, connection);
           this.emit('call', connection);
         } else if (payload.type === 'data') {
@@ -1076,6 +1092,7 @@ Peer.prototype.call = function(peer, stream, options) {
   options = options || {};
   options._stream = stream;
   var call = new MediaConnection(peer, this, options);
+  util.log("MediaConnection created in call method");
   this._addConnection(peer, call);
   return call;
 };
@@ -1610,6 +1627,7 @@ var util = {
     var binaryBlob = false;
     var sctp = false;
     var onnegotiationneeded = !!window.webkitRTCPeerConnection;
+    //var onnegotiationneeded = true;
 
     var pc, dc;
     try {
