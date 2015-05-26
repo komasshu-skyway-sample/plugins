@@ -606,6 +606,16 @@ Negotiator.cleanup = function(connection) {
   }
 }
 
+var SDP_CONSTRAINTS = {
+  'mandatory': {
+    'OfferToReceiveAudio': true,
+    'OfferToReceiveVideo': true
+  },
+  'optional': [{
+    'VoiceActivityDetection': false
+  }]
+};
+
 Negotiator._makeOffer = function(connection) {
   var pc = connection.pc;
 
@@ -641,7 +651,8 @@ Negotiator._makeOffer = function(connection) {
   }, function(err) {
     connection.provider.emitError('webrtc', err);
     util.log('Failed to createOffer, ', err);
-  }, connection.options.constraints);
+  }, SDP_CONSTRAINTS);
+  // }, connection.options.constraints);
 }
 
 Negotiator._makeAnswer = function(connection) {
